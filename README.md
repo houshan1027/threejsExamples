@@ -1,5 +1,5 @@
 ```
-yarn install
+npm install
 ```
 
 ```

@@ -1,4 +1,4 @@
-import { ShaderLib, TextureLoader } from 'three';
+import { ShaderLib, TextureLoader, LoaderUtils } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Resource } from './Core/Resource';
 import { GlobeScene } from './Scene/GlobeScene';
@@ -24,7 +24,8 @@ let model = Model.fromUrl({
     url: '/static/bg/DamagedHelmet/DamagedHelmet.gltf',
     decoderPath: '/static/libs/draco'
 });
-
 scene.addObject(model);
 
-console.log(Resource);
+scene.addHDREnvironment({
+    url: '/static/bg/01_brasschaat_park_bushes.hdr'
+});

@@ -1,8 +1,10 @@
 import { defaultValue } from '../Core/defaultValue';
 import {
     Clock,
+    LinearToneMapping,
     PMREMGenerator,
     Scene,
+    sRGBEncoding,
     UnsignedByteType,
     Vector2,
     Vector3,
@@ -16,6 +18,8 @@ import '../Extended/Object3DExtension';
 import { LightCollection } from '../Core/LightCollection';
 import { Object3DCollection } from '../Core/Object3DCollection';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import { ResourceFetchHdrParameters, Resource } from '../Core/Resource';
+import { GlobeWebGLRenderer } from './GlobeWebGLRenderer';
 
 interface SceneOptions {
     renderState?: {};
@@ -23,7 +27,7 @@ interface SceneOptions {
     requestRenderMode?: Boolean;
 }
 
-interface FrameState {
+export interface FrameStateInterFace {
     //帧数的累计
     frameNumber: any;
     //最大纹理各向异性
@@ -85,7 +89,7 @@ class GlobeScene extends Scene {
     readonly renderer: WebGLRenderer;
     readonly camera: GlobeCamera;
     readonly screenSpaceCameraController: OrbitControls;
-    readonly frameState: FrameState;
+    readonly frameState: FrameStateInterFace;
     readonly preUpdate: Event;
     readonly renderError: Event;
     readonly renderStart: Event;
@@ -105,26 +109,11 @@ class GlobeScene extends Scene {
         renderState.antialias = defaultValue(renderState.antialias, true);
 
         this.shaderFrameCount = 0.0;
-
         this.clock = new Clock();
-
         this.destroyChildren = true;
 
         //渲染器
-        const renderer = new WebGLRenderer(renderState);
-        renderer.autoClear = false;
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setViewport(
-            0,
-            0,
-            container.clientWidth,
-            container.clientHeight
-        );
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setClearColor(0x263238);
-        this.renderer = renderer;
-
-        container.appendChild(this.renderer.domElement);
+        this.renderer = new GlobeWebGLRenderer(container, renderState);
 
         bufferSize.set(container.clientWidth, container.clientHeight);
 
@@ -144,10 +133,9 @@ class GlobeScene extends Scene {
         );
         screenSpaceCameraController.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
         screenSpaceCameraController.dampingFactor = 0.05;
-
         this.screenSpaceCameraController = screenSpaceCameraController;
 
-        let frameState: FrameState = {
+        let frameState: FrameStateInterFace = {
             frameNumber: 0,
             //最大纹理各向异性
             maxAnisotropy: this.renderer.capabilities.getMaxAnisotropy(),
@@ -198,24 +186,18 @@ class GlobeScene extends Scene {
         }
     }
 
-    addHDREnvironment(): Promise<any> {
+    addHDREnvironment(options: ResourceFetchHdrParameters): void {
         var pmremGenerator = new PMREMGenerator(this.renderer);
         pmremGenerator.compileEquirectangularShader();
         let scene = this;
 
-        return new Promise(resolve => {
-            new RGBELoader()
-                .setDataType(UnsignedByteType)
-                .setPath('./texture/')
-                .load('23_antwerp_night.hdr', texture => {
-                    let envMap = pmremGenerator.fromEquirectangular(texture)
-                        .texture;
-                    scene.environment = envMap;
+        Resource.fetchHdr(options).then(texture => {
+            scene.environment = pmremGenerator.fromEquirectangular(
+                texture
+            ).texture;
 
-                    texture.dispose();
-                    pmremGenerator.dispose();
-                    resolve(envMap);
-                });
+            texture.dispose();
+            pmremGenerator.dispose();
         });
     }
 

@@ -28,7 +28,6 @@ Check.typeOf.func = function(name: any, test: any) {
     }
 };
 
-
 /**
  * Throws if test is not defined
  *
@@ -36,10 +35,10 @@ Check.typeOf.func = function(name: any, test: any) {
  * @param {*} test The value that is to be checked
  * @exception {DeveloperError} test must be defined
  */
-Check.defined = function (name: any, test: any) {
-  if (!defined(test)) {
-    throw new DeveloperError(getUndefinedErrorMessage(name));
-  }
+Check.defined = function(name: any, test: any) {
+    if (!defined(test)) {
+        throw new DeveloperError(getUndefinedErrorMessage(name));
+    }
 };
 
 export { Check };

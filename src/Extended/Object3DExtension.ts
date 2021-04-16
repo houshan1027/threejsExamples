@@ -1,16 +1,17 @@
 import { defined } from '../Core/defined';
 import { Object3D } from 'three';
-import { FrameState } from '../Interface/Interface';
+
 import { DeveloperError } from '../Core/DeveloperError';
 import { Object3DCollection } from '../Core/Object3DCollection';
 import { destroyObject } from '../Core/destroyObject';
+import { FrameStateInterFace } from '../Scene/GlobeScene';
 
 declare module 'three/src/core/Object3D' {
     export interface Object3D {
         _collection: any;
         destroyChildren: Boolean;
 
-        updateFixedFrame(frameState: FrameState): void;
+        updateFixedFrame(frameState: FrameStateInterFace): void;
         addObject(object: Object3D): Object3D;
         removeObject(object: Object3D, isDestroy?: Boolean): any;
         isDestroyed(): Boolean;
@@ -20,7 +21,9 @@ declare module 'three/src/core/Object3D' {
 }
 
 //每帧更新函数
-Object3D.prototype.updateFixedFrame = function(frameState: FrameState) {
+Object3D.prototype.updateFixedFrame = function(
+    frameState: FrameStateInterFace
+) {
     let children = this.children;
 
     for (let i = 0, len = children.length; i < len; i++) {

@@ -66,6 +66,10 @@ class Viewer {
         }
         this.scene.background = value;
     }
+
+    get screenSpaceCameraController() {
+        return this.scene.screenSpaceCameraController;
+    }
 }
 
 export { Viewer };

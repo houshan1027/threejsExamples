@@ -25,9 +25,13 @@ class LightCollection extends Object3DCollection {
         this.addObject(this.defaultDirectionalLight);
     }
 
+    //移除默认灯光
     removeDefaultLight(): void {
         if (defined(this.defaultAmbientLight)) {
             this.removeObject(this.defaultAmbientLight);
+        }
+        if (defined(this.defaultDirectionalLight)) {
+            this.removeObject(this.defaultDirectionalLight);
         }
     }
 }

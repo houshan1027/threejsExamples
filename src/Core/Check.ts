@@ -1,3 +1,4 @@
+import { defined } from './defined';
 import { DeveloperError } from './DeveloperError';
 
 let Check: any = {};
@@ -25,6 +26,20 @@ Check.typeOf.func = function(name: any, test: any) {
             getFailedTypeErrorMessage(typeof test, 'function', name)
         );
     }
+};
+
+
+/**
+ * Throws if test is not defined
+ *
+ * @param {String} name The name of the variable being tested
+ * @param {*} test The value that is to be checked
+ * @exception {DeveloperError} test must be defined
+ */
+Check.defined = function (name: any, test: any) {
+  if (!defined(test)) {
+    throw new DeveloperError(getUndefinedErrorMessage(name));
+  }
 };
 
 export { Check };

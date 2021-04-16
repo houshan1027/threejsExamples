@@ -1,11 +1,21 @@
 import { defaultValue } from '../Core/defaultValue';
-import { Clock, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
+import {
+    Clock,
+    PMREMGenerator,
+    Scene,
+    UnsignedByteType,
+    Vector2,
+    Vector3,
+    WebGLRenderer
+} from 'three';
 import { GlobeCamera } from './GlobeCamera';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Event } from '../Core/Event';
 import { Object3D } from '../Extended/Object3DExtension';
 import '../Extended/Object3DExtension';
 import { LightCollection } from '../Core/LightCollection';
+import { Object3DCollection } from '../Core/Object3DCollection';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 
 interface SceneOptions {
     renderState?: {};
@@ -80,7 +90,7 @@ class GlobeScene extends Scene {
     readonly renderError: Event;
     readonly renderStart: Event;
     readonly renderEnd: Event;
-    readonly lightCollection: Object3D;
+    readonly lightCollection: LightCollection;
 
     clock: Clock;
     enabledEffect: Boolean;
@@ -111,7 +121,7 @@ class GlobeScene extends Scene {
             container.clientHeight
         );
         renderer.setPixelRatio(window.devicePixelRatio);
-
+        renderer.setClearColor(0x263238);
         this.renderer = renderer;
 
         container.appendChild(this.renderer.domElement);
@@ -186,6 +196,27 @@ class GlobeScene extends Scene {
             //     canvas.clientHeight
             // );
         }
+    }
+
+    addHDREnvironment(): Promise<any> {
+        var pmremGenerator = new PMREMGenerator(this.renderer);
+        pmremGenerator.compileEquirectangularShader();
+        let scene = this;
+
+        return new Promise(resolve => {
+            new RGBELoader()
+                .setDataType(UnsignedByteType)
+                .setPath('./texture/')
+                .load('23_antwerp_night.hdr', texture => {
+                    let envMap = pmremGenerator.fromEquirectangular(texture)
+                        .texture;
+                    scene.environment = envMap;
+
+                    texture.dispose();
+                    pmremGenerator.dispose();
+                    resolve(envMap);
+                });
+        });
     }
 
     initializeFrame(): void {

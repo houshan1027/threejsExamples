@@ -55,6 +55,17 @@ class Viewer {
             this.scene.removeObject(this.defaultBox);
         }
     }
+
+    get background(): any {
+        return this.scene.background;
+    }
+
+    set background(value: any) {
+        if (defined(this.background)) {
+            this.background.dispose();
+        }
+        this.scene.background = value;
+    }
 }
 
 export { Viewer };

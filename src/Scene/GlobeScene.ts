@@ -8,7 +8,8 @@ import {
     UnsignedByteType,
     Vector2,
     Vector3,
-    WebGLRenderer
+    WebGLRenderer,
+    WebGLRenderTarget
 } from 'three';
 import { GlobeCamera } from './GlobeCamera';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -20,6 +21,8 @@ import { Object3DCollection } from '../Core/Object3DCollection';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { ResourceFetchHdrParameters, Resource } from '../Core/Resource';
 import { GlobeWebGLRenderer } from './GlobeWebGLRenderer';
+import { EffectComposerCollection } from './EffectComposerCollection';
+import { Context } from './Context';
 
 interface SceneOptions {
     renderState?: {};
@@ -36,10 +39,9 @@ export interface FrameStateInterFace {
     pixelRatio: Number;
     //渲染尺寸
     bufferSize: Vector2;
-}
 
-//用于保存绘制缓冲区的宽高
-const bufferSize = new Vector2();
+    context: Context;
+}
 
 let originTransformVector3 = new Vector3();
 
@@ -69,8 +71,10 @@ function render(scene: GlobeScene) {
 
     //如果使用了后处理
     if (scene.enabledEffect) {
+        scene.renderer.clear();
         //执行基于后处理的·1渲染
         // scene.effectComposers.update();
+        scene.effectComposerCollection.render();
     } else {
         //清空渲染结果
         scene.renderer.clear();
@@ -83,10 +87,9 @@ function render(scene: GlobeScene) {
 }
 
 class GlobeScene extends Scene {
-    // [x: string]: any;
     private shaderFrameCount: Number;
 
-    readonly renderer: WebGLRenderer;
+    readonly renderer: GlobeWebGLRenderer;
     readonly camera: GlobeCamera;
     readonly screenSpaceCameraController: OrbitControls;
     readonly frameState: FrameStateInterFace;
@@ -95,12 +98,15 @@ class GlobeScene extends Scene {
     readonly renderStart: Event;
     readonly renderEnd: Event;
     readonly lightCollection: LightCollection;
+    readonly effectComposerCollection: EffectComposerCollection;
+    readonly context: Context;
 
     clock: Clock;
     enabledEffect: Boolean;
     requestRenderMode: Boolean;
     _renderRequested: Boolean;
     rethrowRenderErrors: Boolean;
+    useDepthPick: Boolean;
 
     constructor(container: any, options: SceneOptions) {
         super();
@@ -115,8 +121,6 @@ class GlobeScene extends Scene {
         //渲染器
         this.renderer = new GlobeWebGLRenderer(container, renderState);
 
-        bufferSize.set(container.clientWidth, container.clientHeight);
-
         //初始化相机
         this.camera = new GlobeCamera({
             scene: this,
@@ -125,6 +129,8 @@ class GlobeScene extends Scene {
             near: 0.1,
             far: 500000000
         });
+
+        this.context = new Context(this);
 
         //初始化相机控制器
         let screenSpaceCameraController = new OrbitControls(
@@ -142,13 +148,12 @@ class GlobeScene extends Scene {
             //分辨率
             pixelRatio: this.renderer.getPixelRatio(),
             //渲染尺寸
-            bufferSize: bufferSize
+            bufferSize: new Vector2().copy(this.renderer.drawingBufferSize),
+
+            context: this.context
         };
 
         this.frameState = frameState;
-
-        //是否开始后处理
-        this.enabledEffect = defaultValue(options.enabledEffect, false);
 
         this.rethrowRenderErrors = false;
 
@@ -167,6 +172,13 @@ class GlobeScene extends Scene {
 
         this.requestRenderMode = defaultValue(options.requestRenderMode, false);
         this._renderRequested = true;
+
+        //是否使用深度拾取
+        this.useDepthPick = true;
+
+        //是否开始后处理
+        this.enabledEffect = defaultValue(options.enabledEffect, false);
+        this.effectComposerCollection = new EffectComposerCollection(this);
     }
 
     get pixelRatio(): Number {
@@ -176,13 +188,13 @@ class GlobeScene extends Scene {
     //窗口尺寸变化时触发
     setSize(canvas: HTMLCanvasElement) {
         this.camera.resize(canvas);
+
         this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-        this.renderer.getDrawingBufferSize(bufferSize);
+
         if (this.enabledEffect) {
-            // this.effectComposers.setSize(
-            //     canvas.clientWidth,
-            //     canvas.clientHeight
-            // );
+            this.effectComposerCollection.setSize();
+        } else {
+            // this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
         }
     }
 
@@ -208,17 +220,16 @@ class GlobeScene extends Scene {
 
     updateFrameState() {
         let frameState = this.frameState;
-        frameState.bufferSize = bufferSize;
+        frameState.bufferSize.copy(this.renderer.drawingBufferSize);
         frameState.frameNumber++;
+
+        frameState.context.update();
     }
 
     executeUpdate() {
-        let that = this;
-
         this.updateFrameState();
 
         this.updateFixedFrame(this.frameState);
-        // this.bloomScene.updateFixedFrame(this.bloomScene, this.frameState);
     }
 
     render(): void {

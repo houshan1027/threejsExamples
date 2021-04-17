@@ -1,11 +1,20 @@
-import { ShaderLib, TextureLoader, LoaderUtils } from 'three';
+import {
+    ShaderLib,
+    TextureLoader,
+    LoaderUtils,
+    BoxGeometry,
+    MeshStandardMaterial,
+    Mesh
+} from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Resource } from './Core/Resource';
 import { GlobeScene } from './Scene/GlobeScene';
 import { Model } from './Scene/Model';
 import { Viewer } from './Viewer/Viewer';
 
-let viewer = new Viewer('app');
+let viewer = new Viewer('app', {
+    enabledEffect: true
+});
 
 viewer.removeDefaultBox();
 

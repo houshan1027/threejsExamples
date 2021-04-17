@@ -17,8 +17,11 @@ declare module 'three/src/core/Object3D' {
         isDestroyed(): Boolean;
         destroy(): any;
         destroySelf(): void;
+        allowPicking: Boolean;
     }
 }
+
+Object3D.prototype.allowPicking = true;
 
 //每帧更新函数
 Object3D.prototype.updateFixedFrame = function(

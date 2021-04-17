@@ -2,9 +2,13 @@ import { defaultValue } from '../Core/defaultValue';
 import {
     LinearToneMapping,
     sRGBEncoding,
+    Vector2,
     WebGLRenderer,
     WebGLRendererParameters
 } from 'three';
+
+//用于保存当前绘图缓冲区的宽高
+let drawingBufferSize = new Vector2();
 
 class GlobeWebGLRenderer extends WebGLRenderer {
     constructor(container: any, options: WebGLRendererParameters) {
@@ -20,6 +24,10 @@ class GlobeWebGLRenderer extends WebGLRenderer {
         this.outputEncoding = sRGBEncoding;
 
         container.appendChild(this.domElement);
+    }
+
+    get drawingBufferSize(): Vector2 {
+        return this.getDrawingBufferSize(drawingBufferSize);
     }
 }
 

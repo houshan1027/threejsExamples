@@ -5,6 +5,7 @@ import { GlobeScene } from '../Scene/GlobeScene';
 import getElement from './getElement';
 import { defined } from '../Core/defined';
 import { DeveloperError } from '../Core/DeveloperError';
+import { ScreenSpaceEventHandler } from '../Core/ScreenSpaceEventHandler';
 
 function startRenderLoop(widget: Widgets) {
     widget._renderLoopRunning = true;
@@ -85,6 +86,7 @@ class Widgets {
     readonly scene: GlobeScene;
     readonly renderer: WebGLRenderer;
     readonly camera: GlobeCamera;
+    readonly screenSpaceEventHandler: ScreenSpaceEventHandler;
 
     canRender: Boolean;
 
@@ -98,7 +100,7 @@ class Widgets {
     _canvasHeight: Number;
 
     constructor(
-        container: Element | String,
+        container: Element | String | HTMLCanvasElement,
         options?: {
             useDefaultRenderLoop?: Boolean;
             renderState?: {};
@@ -143,6 +145,10 @@ class Widgets {
         this._forceResize = false;
 
         this._showRenderLoopErrors = true;
+
+        this.screenSpaceEventHandler = new ScreenSpaceEventHandler(
+            this._canvas
+        );
     }
 
     get useDefaultRenderLoop(): Boolean {

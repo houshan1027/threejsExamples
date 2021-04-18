@@ -10,6 +10,7 @@ import {
 import { GlobeCamera } from '../Scene/GlobeCamera';
 import { GlobeScene } from '../Scene/GlobeScene';
 import { Widgets } from '../Widgets/Widget';
+import { ScreenSpaceEventHandler } from '../Core/ScreenSpaceEventHandler';
 
 class Viewer {
     readonly widget: Widgets;
@@ -69,6 +70,10 @@ class Viewer {
 
     get screenSpaceCameraController() {
         return this.scene.screenSpaceCameraController;
+    }
+
+    get screenSpaceEventHandler(): ScreenSpaceEventHandler {
+        return this.widget.screenSpaceEventHandler;
     }
 }
 

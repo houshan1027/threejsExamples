@@ -34,9 +34,9 @@ export interface FrameStateInterFace {
     //帧数的累计
     frameNumber: any;
     //最大纹理各向异性
-    maxAnisotropy: Number;
+    maxAnisotropy: number;
     //分辨率
-    pixelRatio: Number;
+    pixelRatio: number;
     //渲染尺寸
     bufferSize: Vector2;
 
@@ -87,7 +87,7 @@ function render(scene: GlobeScene) {
 }
 
 class GlobeScene extends Scene {
-    private shaderFrameCount: Number;
+    private shaderFrameCount: number;
 
     readonly renderer: GlobeWebGLRenderer;
     readonly camera: GlobeCamera;
@@ -106,7 +106,7 @@ class GlobeScene extends Scene {
     requestRenderMode: Boolean;
     _renderRequested: Boolean;
     rethrowRenderErrors: Boolean;
-    useDepthPick: Boolean;
+    useDepthPicking: Boolean;
 
     constructor(container: any, options: SceneOptions) {
         super();
@@ -127,7 +127,7 @@ class GlobeScene extends Scene {
             fov: 60,
             aspect: container.clientWidth / container.clientHeight,
             near: 0.1,
-            far: 500000000
+            far: 100000
         });
 
         this.context = new Context(this);
@@ -174,15 +174,19 @@ class GlobeScene extends Scene {
         this._renderRequested = true;
 
         //是否使用深度拾取
-        this.useDepthPick = true;
+        this.useDepthPicking = true;
 
         //是否开始后处理
         this.enabledEffect = defaultValue(options.enabledEffect, false);
         this.effectComposerCollection = new EffectComposerCollection(this);
     }
 
-    get pixelRatio(): Number {
+    get pixelRatio(): number {
         return this.renderer.getPixelRatio();
+    }
+
+    get drawingBufferSize(): Vector2 {
+        return this.renderer.drawingBufferSize;
     }
 
     //窗口尺寸变化时触发

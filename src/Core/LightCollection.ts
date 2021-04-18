@@ -6,13 +6,26 @@ class LightCollection extends Object3DCollection {
     private defaultAmbientLight: AmbientLight;
     private defaultDirectionalLight: DirectionalLight;
 
+    private _enabled: Boolean;
+
     constructor() {
         super();
         this.defaultAmbientLight = undefined;
         this.defaultDirectionalLight = undefined;
 
+        //是否开启该集合中的灯光
+        this._enabled = true;
+
         //初始化的时候，添加默认灯光
         this.addDefaultLight();
+    }
+
+    get enabled(): Boolean {
+        return this._enabled;
+    }
+
+    set enabled(value: Boolean) {
+        // if(value)
     }
 
     //创建默认的灯光

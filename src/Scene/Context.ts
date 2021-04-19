@@ -6,6 +6,7 @@ import {
     MeshDepthMaterial,
     NearestFilter,
     RGBADepthPacking,
+    RGBAFormat,
     RGBFormat,
     Texture,
     WebGLRenderTarget
@@ -22,6 +23,7 @@ class Context {
     private readonly camera: GlobeCamera;
     private readonly depthMaterial: MeshDepthMaterial;
 
+    depthTextureDirty: Boolean;
     depthRenderTarget: WebGLRenderTarget;
 
     constructor(scene: GlobeScene) {
@@ -37,16 +39,20 @@ class Context {
             side: FrontSide,
             depthPacking: RGBADepthPacking
         });
+
+        //当前的深度数据是否为之前帧的旧数据
+        this.depthTextureDirty = true;
     }
 
     get depthTexture(): Texture {
+        this.updateRenderTarget();
         return this.depthRenderTarget.texture;
     }
 
     private createRenderTarget(): WebGLRenderTarget {
         let buffer = this.renderer.drawingBufferSize;
         let renderTarget = new WebGLRenderTarget(buffer.width, buffer.height, {
-            format: RGBFormat
+            format: RGBAFormat
         });
 
         renderTarget.texture.minFilter = NearestFilter;
@@ -58,11 +64,10 @@ class Context {
 
     //读取像素
     readPixels(readState: {
-        renderTarget: WebGLRenderTarget;
-        height: number;
-        width: number;
-        x: number;
-        y: number;
+        height: Number;
+        width: Number;
+        x: Number;
+        y: Number;
     }) {
         readState = defaultValue(readState, {});
 
@@ -74,6 +79,8 @@ class Context {
         let height = defaultValue(readState.height, gl.drawingBufferHeight);
 
         let pixels = new Uint8Array(4);
+
+        this.updateRenderTarget();
 
         this.renderer.readRenderTargetPixels(
             this.depthRenderTarget,
@@ -89,6 +96,11 @@ class Context {
 
     //更新RTT
     updateRenderTarget(): void {
+        //如果不是旧数据
+        if (!this.depthTextureDirty) {
+            return;
+        }
+
         let renderer = this.renderer;
         let scene = this.scene;
         let camera = this.camera;
@@ -126,10 +138,16 @@ class Context {
 
         scene.background = oldBackground;
         scene.environment = oldSceneEnv;
+
+        //更新DepthTexture之后
+        this.depthTextureDirty = false;
     }
 
-    update(): void {
-        this.updateRenderTarget();
+    preUpdate(): void {}
+
+    //渲染结束之后执行
+    postRender() {
+        this.depthTextureDirty = true;
     }
 }
 

@@ -6,7 +6,9 @@ import {
     MeshStandardMaterial,
     Mesh,
     MeshBasicMaterial,
-    PlaneGeometry
+    PlaneGeometry,
+    Raycaster,
+    Vector2
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Resource } from './Core/Resource';
@@ -46,16 +48,20 @@ scene.addHDREnvironment({
     url: '/static/bg/01_brasschaat_park_bushes.hdr'
 });
 
-// const geometry = new PlaneGeometry(1, 1);
-// const material = new MeshBasicMaterial({ color: 0x00ff00 });
-// const cube = new Mesh(geometry, material);
-// scene.addObject(cube);
-// cube.position.y += 2.0;
-
-// scene.preUpdate.addEventListener(() => {
-//     cube.material.map = scene.frameState.context.renderTarget.texture;
-// });
+const raycaster = new Raycaster();
+const mouse = new Vector2();
 
 viewer.screenSpaceEventHandler.setInputAction((movement: any) => {
-    console.log(movement);
+    // console.log(movement);
+
+    mouse.x = (movement.position.x / scene.drawingBufferSize.width) * 2 - 1;
+    mouse.y = -(movement.position.y / scene.drawingBufferSize.height) * 2 + 1;
+
+    console.log(scene.pickPosition(movement.position));
+
+    raycaster.setFromCamera(mouse, camera);
+
+    // calculate objects intersecting the picking ray
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    console.log(intersects);
 }, ScreenSpaceEventType.LEFT_CLICK);

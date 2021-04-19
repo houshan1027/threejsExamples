@@ -23,6 +23,7 @@ import { ResourceFetchHdrParameters, Resource } from '../Core/Resource';
 import { GlobeWebGLRenderer } from './GlobeWebGLRenderer';
 import { EffectComposerCollection } from './EffectComposerCollection';
 import { Context } from './Context';
+import { Picking } from './Picking';
 
 interface SceneOptions {
     renderState?: {};
@@ -41,6 +42,7 @@ export interface FrameStateInterFace {
     bufferSize: Vector2;
 
     context: Context;
+    useLogDepth: Boolean;
 }
 
 let originTransformVector3 = new Vector3();
@@ -69,21 +71,19 @@ function render(scene: GlobeScene) {
     //渲染开始事件的回调
     scene.renderStart.raiseEvent();
 
+    //清空渲染结果
+    scene.renderer.clear();
     //如果使用了后处理
     if (scene.enabledEffect) {
-        scene.renderer.clear();
-        //执行基于后处理的·1渲染
-        // scene.effectComposers.update();
+        //执行基于后处理的渲染
         scene.effectComposerCollection.render();
     } else {
-        //清空渲染结果
-        scene.renderer.clear();
         //主场景渲染
         scene.renderer.render(scene, scene.camera);
     }
 
     //渲染结束的回调
-    scene.renderEnd.raiseEvent();
+    scene.postRender.raiseEvent();
 }
 
 class GlobeScene extends Scene {
@@ -96,10 +96,11 @@ class GlobeScene extends Scene {
     readonly preUpdate: Event;
     readonly renderError: Event;
     readonly renderStart: Event;
-    readonly renderEnd: Event;
+    readonly postRender: Event;
     readonly lightCollection: LightCollection;
     readonly effectComposerCollection: EffectComposerCollection;
     readonly context: Context;
+    readonly picking: Picking;
 
     clock: Clock;
     enabledEffect: Boolean;
@@ -150,7 +151,9 @@ class GlobeScene extends Scene {
             //渲染尺寸
             bufferSize: new Vector2().copy(this.renderer.drawingBufferSize),
 
-            context: this.context
+            context: this.context,
+
+            useLogDepth: this.renderer.capabilities.logarithmicDepthBuffer
         };
 
         this.frameState = frameState;
@@ -164,7 +167,7 @@ class GlobeScene extends Scene {
         //渲染开始前触发
         this.renderStart = new Event();
         //渲染结束后触发
-        this.renderEnd = new Event();
+        this.postRender = new Event();
 
         //场景灯光集合
         this.lightCollection = new LightCollection();
@@ -179,6 +182,8 @@ class GlobeScene extends Scene {
         //是否开始后处理
         this.enabledEffect = defaultValue(options.enabledEffect, false);
         this.effectComposerCollection = new EffectComposerCollection(this);
+
+        this.picking = new Picking();
     }
 
     get pixelRatio(): number {
@@ -217,6 +222,10 @@ class GlobeScene extends Scene {
         });
     }
 
+    pickPosition(windowPosition: Vector2, result?: Vector3 | undefined) {
+        return this.picking.pickPosition(this, windowPosition, result);
+    }
+
     initializeFrame(): void {
         this.screenSpaceCameraController.update();
         this.camera._updateCameraChanged();
@@ -227,12 +236,11 @@ class GlobeScene extends Scene {
         frameState.bufferSize.copy(this.renderer.drawingBufferSize);
         frameState.frameNumber++;
 
-        frameState.context.update();
+        frameState.context.preUpdate();
     }
 
     executeUpdate() {
         this.updateFrameState();
-
         this.updateFixedFrame(this.frameState);
     }
 

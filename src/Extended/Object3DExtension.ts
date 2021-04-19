@@ -1,5 +1,5 @@
 import { defined } from '../Core/defined';
-import { Object3D } from 'three';
+import { Object3D, Vector4 } from 'three';
 
 import { DeveloperError } from '../Core/DeveloperError';
 import { Object3DCollection } from '../Core/Object3DCollection';

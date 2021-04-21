@@ -9,11 +9,7 @@ import { defined } from '../Core/defined';
 export interface unpackF {
     unpack(array: any, startingIndex: number, result: any): Vector4;
 }
-export const unpack = ((Vector4 as any).unpack = function(
-    array: Number[],
-    startingIndex: number,
-    result: any
-): Vector4 {
+export const unpack = ((Vector4 as any).unpack = function(array: Number[], startingIndex: number, result: any): Vector4 {
     Check.defined('array', array);
 
     if (!defined(result)) {

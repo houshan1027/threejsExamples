@@ -11,25 +11,9 @@ var scratchPosition = new Vector2();
 var scratchColorZero = new Vector4(0.0, 0.0, 0.0, 0.0);
 
 var scratchPackedDepth = new Vector4();
-var packedDepthScale = new Vector4(
-    1.0,
-    1.0 / 255.0,
-    1.0 / 65025.0,
-    1.0 / 16581375.0
-);
 
-let unpack = function(array: any, startingIndex: number, result: any): Vector4 {
-    Check.defined('array', array);
-
-    if (!defined(result)) {
-        result = new Vector4();
-    }
-    result.x = array[startingIndex++];
-    result.y = array[startingIndex++];
-    result.z = array[startingIndex++];
-    result.w = array[startingIndex];
-    return result;
-};
+const UnpackDownscale = 255 / 256;
+var UnpackFactors = new Vector4((UnpackDownscale / 256) * 256 * 256, (UnpackDownscale / 256) * 256, UnpackDownscale / 256, UnpackDownscale / 255 / 256);
 
 class Picking {
     constructor() {}
@@ -43,25 +27,14 @@ class Picking {
             height: 1
         });
 
-        //方法01
-        // let packedDepth = (Vector4 as any).unpack(pixels, 0, scratchPackedDepth);
-        //方法02
+        let packedDepth = (Vector4 as any).unpack(pixels, 0, scratchPackedDepth);
 
-        let packedDepth = (Vector4 as any).unpack(
-            pixels,
-            0,
-            scratchPackedDepth
-        );
+        // packedDepth.divideScalar(255);
 
-        packedDepth.divideScalar(255);
-        return packedDepth.dot(packedDepthScale);
+        return packedDepth.dot(UnpackFactors);
     }
 
-    pickPositionWorldCoordinates(
-        scene: GlobeScene,
-        windowPosition: Vector2,
-        result: Vector3
-    ): Vector3 {
+    pickPositionWorldCoordinates(scene: GlobeScene, windowPosition: Vector2, result: Vector3): Vector3 {
         if (!scene.useDepthPicking) {
             return;
         }
@@ -72,26 +45,12 @@ class Picking {
         }
         //>>includeEnd('debug');
 
-        var drawingBufferPosition = SceneTransforms.transformWindowToDrawingBuffer(
-            scene,
-            windowPosition,
-            scratchPosition
-        );
-        drawingBufferPosition.y =
-            scene.drawingBufferSize.height - drawingBufferPosition.y;
+        var drawingBufferPosition = SceneTransforms.transformWindowToDrawingBuffer(scene, windowPosition, scratchPosition);
+        // drawingBufferPosition.y = scene.drawingBufferSize.height - drawingBufferPosition.y;
 
-        let depth: number = this.getDepth(
-            scene.context,
-            drawingBufferPosition.x,
-            drawingBufferPosition.y
-        );
+        let depth: number = this.getDepth(scene.context, drawingBufferPosition.x, drawingBufferPosition.y);
 
-        return SceneTransforms.drawingBufferToWorldPosition(
-            scene,
-            drawingBufferPosition,
-            depth,
-            result
-        );
+        return SceneTransforms.drawingBufferToWorldPosition(scene, drawingBufferPosition, depth, result);
     }
 
     pickPosition(scene: GlobeScene, windowPosition: Vector2, result: Vector3) {

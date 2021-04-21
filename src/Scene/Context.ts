@@ -1,26 +1,35 @@
 import { defaultValue } from '../Core/defaultValue';
 import {
     Color,
+    DepthFormat,
     DepthTexture,
+    FloatType,
     FrontSide,
+    LinearFilter,
     MeshDepthMaterial,
     NearestFilter,
     RGBADepthPacking,
     RGBAFormat,
     RGBFormat,
+    Scene,
     Texture,
+    UnsignedShortType,
+    Vector2,
     WebGLRenderTarget
 } from 'three';
 import { GlobeCamera } from './GlobeCamera';
 import { GlobeScene } from './GlobeScene';
 import { GlobeWebGLRenderer } from './GlobeWebGLRenderer';
+import { defined } from '../Core/defined';
+import { DeveloperError } from '../Core/DeveloperError';
 
 let oldClearColor = new Color();
 
 class Context {
-    private readonly scene: GlobeScene;
+    private scene: Scene;
+    private camera: GlobeCamera;
+
     private readonly renderer: GlobeWebGLRenderer;
-    private readonly camera: GlobeCamera;
     private readonly depthMaterial: MeshDepthMaterial;
 
     depthTextureDirty: Boolean;
@@ -28,7 +37,7 @@ class Context {
 
     constructor(scene: GlobeScene) {
         this.scene = scene;
-        this.camera = scene.camera;
+        this.camera = undefined;
         this.renderer = scene.renderer;
 
         //创建renderTarget
@@ -49,47 +58,51 @@ class Context {
         return this.depthRenderTarget.texture;
     }
 
-    private createRenderTarget(): WebGLRenderTarget {
-        let buffer = this.renderer.drawingBufferSize;
-        let renderTarget = new WebGLRenderTarget(buffer.width, buffer.height, {
-            format: RGBAFormat
-        });
+    get bufferSize(): Vector2 {
+        return this.renderer.drawingBufferSize;
+    }
 
-        renderTarget.texture.minFilter = NearestFilter;
-        renderTarget.texture.magFilter = NearestFilter;
+    private createRenderTarget(): WebGLRenderTarget {
+        let buffer = this.bufferSize;
+        let renderTarget = new WebGLRenderTarget(buffer.width, buffer.height, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: FloatType });
+
+        // renderTarget.texture.format = RGBAFormat;
+        // renderTarget.texture.minFilter = NearestFilter;
+        // renderTarget.texture.magFilter = NearestFilter;
         renderTarget.texture.generateMipmaps = false;
 
         return renderTarget;
     }
 
-    //读取像素
-    readPixels(readState: {
-        height: Number;
-        width: Number;
-        x: Number;
-        y: Number;
-    }) {
-        readState = defaultValue(readState, {});
+    updateCamera(camera: GlobeCamera) {
+        this.camera = camera;
+    }
 
-        let gl = this.renderer.context;
+    updateScene(scene: Scene) {
+        this.scene = scene;
+    }
+
+    //读取像素
+    readPixels(readState: { height: Number; width: Number; x: Number; y: Number }) {
+        readState = defaultValue(readState, {});
+        let bufferSize = this.bufferSize;
 
         let x = Math.max(defaultValue(readState.x, 0), 0);
         let y = Math.max(defaultValue(readState.y, 0), 0);
-        let width = defaultValue(readState.width, gl.drawingBufferWidth);
-        let height = defaultValue(readState.height, gl.drawingBufferHeight);
+        let width = defaultValue(readState.width, bufferSize.width);
+        let height = defaultValue(readState.height, bufferSize.height);
 
-        let pixels = new Uint8Array(4);
+        let halfWidth = this.bufferSize.width / 2;
+        let halfHeight = this.bufferSize.height / 2;
+
+        x = x - halfWidth;
+        y = y - halfHeight;
+
+        let pixels = new Float32Array(4);
 
         this.updateRenderTarget();
 
-        this.renderer.readRenderTargetPixels(
-            this.depthRenderTarget,
-            x,
-            y,
-            width,
-            height,
-            pixels
-        );
+        this.renderer.readRenderTargetPixels(this.depthRenderTarget, halfWidth + x, halfHeight - y, width, height, pixels);
 
         return pixels;
     }
@@ -104,6 +117,10 @@ class Context {
         let renderer = this.renderer;
         let scene = this.scene;
         let camera = this.camera;
+
+        if (!defined(scene) || !defined(camera) || !defined(renderer)) {
+            throw new DeveloperError('scene, camera或renderer参数不存在');
+        }
 
         //拿到原始清空色
         renderer.getClearColor(oldClearColor);
@@ -140,7 +157,7 @@ class Context {
         scene.environment = oldSceneEnv;
 
         //更新DepthTexture之后
-        this.depthTextureDirty = false;
+        this.depthTextureDirty = true;
     }
 
     preUpdate(): void {}

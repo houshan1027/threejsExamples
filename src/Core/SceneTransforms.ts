@@ -9,11 +9,7 @@ let viewport = new Vector4();
 let inverseViewProjection = new Matrix4();
 
 let SceneTransforms = {
-    transformWindowToDrawingBuffer: function(
-        scene: GlobeScene,
-        windowPosition: Vector2,
-        result: Vector2
-    ) {
+    transformWindowToDrawingBuffer: function(scene: GlobeScene, windowPosition: Vector2, result: Vector2) {
         let domElement = scene.renderer.domElement;
         let xScale = scene.drawingBufferSize.width / domElement.clientWidth;
         let yScale = scene.drawingBufferSize.height / domElement.clientHeight;
@@ -24,12 +20,7 @@ let SceneTransforms = {
     },
 
     //缓冲区坐标以及深度计算世界坐标
-    drawingBufferToWorldPosition(
-        scene: GlobeScene,
-        drawingBufferPosition: Vector2,
-        depth: number,
-        result: Vector3
-    ): Vector3 {
+    drawingBufferToWorldPosition(scene: GlobeScene, drawingBufferPosition: Vector2, depth: number, result: Vector3): Vector3 {
         let { context, camera } = scene;
 
         let { near, far } = scene.camera;
@@ -37,29 +28,22 @@ let SceneTransforms = {
         if (scene.frameState.useLogDepth) {
             var log2Depth: number = depth * Math.log2(far - near + 1.0);
             var depthFromNear = Math.pow(2.0, log2Depth) - 1.0;
-            depth =
-                (far * (1.0 - near / (depthFromNear + near))) / (far - near);
+            depth = (far * (1.0 - near / (depthFromNear + near))) / (far - near);
         }
+
+        console.log(depth);
 
         var ndc = scratchNDC.copy((Vector4 as any).UNIT_W);
         scene.renderer.getCurrentViewport(viewport);
-        ndc.x =
-            ((drawingBufferPosition.x - viewport.x) / viewport.width) * 2.0 -
-            1.0;
-        ndc.y =
-            ((drawingBufferPosition.y - viewport.y) / viewport.height) * 2.0 -
-            1.0;
+        ndc.x = ((drawingBufferPosition.x - viewport.x) / viewport.width) * 2.0 - 1.0;
+        ndc.y = ((drawingBufferPosition.y - viewport.y) / viewport.height) * 2.0 - 1.0;
         ndc.z = depth * 2.0 - 1.0;
         ndc.w = 1.0;
 
-        inverseViewProjection.multiplyMatrices(
-            camera.projectionMatrix,
-            camera.matrixWorldInverse
-        );
-        inverseViewProjection.invert();
+        camera.updateProjectionMatrix();
+        ndc.applyMatrix4(camera.projectionMatrixInverse).applyMatrix4(camera.matrixWorld);
 
         scratchWorldCoords.copy(ndc);
-        scratchWorldCoords.applyMatrix4(inverseViewProjection);
 
         let worldPosition = scratchWorldCoords;
         let w = worldPosition.w;

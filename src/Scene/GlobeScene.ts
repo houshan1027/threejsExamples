@@ -1,16 +1,5 @@
 import { defaultValue } from '../Core/defaultValue';
-import {
-    Clock,
-    LinearToneMapping,
-    PMREMGenerator,
-    Scene,
-    sRGBEncoding,
-    UnsignedByteType,
-    Vector2,
-    Vector3,
-    WebGLRenderer,
-    WebGLRenderTarget
-} from 'three';
+import { Clock, LinearToneMapping, PMREMGenerator, Scene, sRGBEncoding, UnsignedByteType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { GlobeCamera } from './GlobeCamera';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Event } from '../Core/Event';
@@ -82,6 +71,7 @@ function render(scene: GlobeScene) {
         scene.renderer.render(scene, scene.camera);
     }
 
+    scene.context.postRender();
     //渲染结束的回调
     scene.postRender.raiseEvent();
 }
@@ -134,10 +124,7 @@ class GlobeScene extends Scene {
         this.context = new Context(this);
 
         //初始化相机控制器
-        let screenSpaceCameraController = new OrbitControls(
-            this.camera,
-            this.renderer.domElement
-        );
+        let screenSpaceCameraController = new OrbitControls(this.camera, this.renderer.domElement);
         screenSpaceCameraController.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
         screenSpaceCameraController.dampingFactor = 0.05;
         this.screenSpaceCameraController = screenSpaceCameraController;
@@ -213,9 +200,7 @@ class GlobeScene extends Scene {
         let scene = this;
 
         Resource.fetchHdr(options).then(texture => {
-            scene.environment = pmremGenerator.fromEquirectangular(
-                texture
-            ).texture;
+            scene.environment = pmremGenerator.fromEquirectangular(texture).texture;
 
             texture.dispose();
             pmremGenerator.dispose();

@@ -1,13 +1,16 @@
 import { defaultValue } from '../Core/defaultValue';
 import {
+    Camera,
     Color,
     DepthFormat,
     DepthTexture,
+    EventDispatcher,
     FloatType,
     FrontSide,
     LinearFilter,
     MeshDepthMaterial,
     NearestFilter,
+    PerspectiveCamera,
     RGBADepthPacking,
     RGBAFormat,
     RGBFormat,
@@ -15,6 +18,7 @@ import {
     Texture,
     UnsignedShortType,
     Vector2,
+    WebGLMultisampleRenderTarget,
     WebGLRenderTarget
 } from 'three';
 import { GlobeCamera } from './GlobeCamera';
@@ -22,10 +26,11 @@ import { GlobeScene } from './GlobeScene';
 import { GlobeWebGLRenderer } from './GlobeWebGLRenderer';
 import { defined } from '../Core/defined';
 import { DeveloperError } from '../Core/DeveloperError';
+import { Check } from '../Core/Check';
 
 let oldClearColor = new Color();
 
-class Context {
+class Context extends EventDispatcher {
     private scene: Scene;
     private camera: GlobeCamera;
 
@@ -36,6 +41,7 @@ class Context {
     depthRenderTarget: WebGLRenderTarget;
 
     constructor(scene: GlobeScene) {
+        super();
         this.scene = scene;
         this.camera = undefined;
         this.renderer = scene.renderer;
@@ -66,54 +72,86 @@ class Context {
         let buffer = this.bufferSize;
         let renderTarget = new WebGLRenderTarget(buffer.width, buffer.height, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: FloatType });
 
-        // renderTarget.texture.format = RGBAFormat;
-        // renderTarget.texture.minFilter = NearestFilter;
-        // renderTarget.texture.magFilter = NearestFilter;
         renderTarget.texture.generateMipmaps = false;
 
         return renderTarget;
     }
 
-    updateCamera(camera: GlobeCamera) {
-        this.camera = camera;
-    }
-
-    updateScene(scene: Scene) {
-        this.scene = scene;
+    updateRenderState(options: { camera: any; scene: Scene }) {
+        this.camera = options.camera;
+        this.scene = options.scene;
     }
 
     //读取像素
-    readPixels(readState: { height: Number; width: Number; x: Number; y: Number }) {
+    readPixels(readState: {
+        height: Number;
+        width: Number;
+        x: Number;
+        y: Number;
+        renderTarget: WebGLRenderTarget | WebGLMultisampleRenderTarget;
+        scene: Scene;
+        camera: PerspectiveCamera;
+    }) {
         readState = defaultValue(readState, {});
         let bufferSize = this.bufferSize;
 
         let x = Math.max(defaultValue(readState.x, 0), 0);
         let y = Math.max(defaultValue(readState.y, 0), 0);
-        let width = defaultValue(readState.width, bufferSize.width);
-        let height = defaultValue(readState.height, bufferSize.height);
 
-        let halfWidth = this.bufferSize.width / 2;
-        let halfHeight = this.bufferSize.height / 2;
+        //要被读取颜色的RTTexture
+        let renderTarget = readState.renderTarget;
+        let camera = readState.camera;
+        let scene = readState.scene;
+        let renderer = this.renderer;
+        let domElement = renderer.domElement;
 
-        x = x - halfWidth;
-        y = y - halfHeight;
+        Check.defined('readState.renderTarget', renderTarget);
+
+        let currentRenderTarget = renderer.getRenderTarget();
+        renderer.getClearColor(oldClearColor);
+        let oldClearAlpha = renderer.getClearAlpha();
+        let oldAutoAClear = renderer.autoClear;
+        // let currentXrEnabled = renderer.xr.enabled;
+        // let currentShadowAutoUpdate = renderer.shadowMap.autoUpdate;
+
+        // // camera.setViewOffset(domElement.width, domElement.height, (x * window.devicePixelRatio) | 0, (y * window.devicePixelRatio) | 0, 1, 1);
+
+        renderer.autoClear = false;
+        renderer.setClearColor(0x000000, 1);
+
+        // renderer.setRenderTarget(readState.renderTarget);
+        // renderer.clear();
+        // renderer.render(scene, camera);
+
+        // // camera.clearViewOffset();
+
+        // //renderer配置还原
+
+        // renderer.xr.enabled = currentXrEnabled;
+        // renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
+        // renderer.setRenderTarget(currentRenderTarget);
+
+        renderer.clear();
+        renderer.setRenderTarget(renderTarget);
+        renderer.clear();
+        renderer.render(scene, camera);
+
+        renderer.setClearColor(oldClearColor);
+        renderer.setClearAlpha(oldClearAlpha);
+        renderer.autoClear = oldAutoAClear;
+
+        this.dispatchEvent({ type: 'render', res: renderTarget });
+        renderer.setRenderTarget(currentRenderTarget);
 
         let pixels = new Float32Array(4);
-
-        this.updateRenderTarget();
-
-        this.renderer.readRenderTargetPixels(this.depthRenderTarget, halfWidth + x, halfHeight - y, width, height, pixels);
+        this.renderer.readRenderTargetPixels(renderTarget, x, y, 1, 1, pixels);
+        // console.log(pixels);
 
         return pixels;
     }
 
     //更新RTT
     updateRenderTarget(): void {
-        //如果不是旧数据
-        if (!this.depthTextureDirty) {
-            return;
-        }
-
         let renderer = this.renderer;
         let scene = this.scene;
         let camera = this.camera;

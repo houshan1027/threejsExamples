@@ -12,13 +12,19 @@ import {
     SphereGeometry,
     DoubleSide,
     Vector3,
-    ShaderMaterial
+    ShaderMaterial,
+    FileLoader,
+    CanvasTexture,
+    RGBAFormat,
+    ImageBitmapLoader
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Resource } from './Core/Resource';
 import { ScreenSpaceEventType } from './Core/ScreenSpaceEventType';
 import { GlobeScene } from './Scene/GlobeScene';
 import { Model } from './Scene/Model';
+import { Cesium3Dtileset } from './Tmp/Cesium3Dtileset';
+import { CesiumTile } from './Tmp/CesiumTile';
 import { Viewer } from './Viewer/Viewer';
 
 let viewer = new Viewer('app', {
@@ -42,10 +48,10 @@ let model = Model.fromUrl({
     url: '/static/bg/DamagedHelmet/DamagedHelmet.gltf',
     decoderPath: '/static/libs/draco'
 });
-scene.addObject(model);
+// scene.addObject(model);
 
 model.readyEvent.addEventListener(() => {
-    console.log(scene);
+    console.log(model);
 });
 
 scene.addHDREnvironment({
@@ -55,84 +61,98 @@ scene.addHDREnvironment({
 const raycaster = new Raycaster();
 const mouse = new Vector2();
 
-const geometry = new SphereGeometry(0.1, 32, 32);
-const material = new MeshBasicMaterial({ color: 0xffff00 });
-
 viewer.screenSpaceEventHandler.setInputAction((movement: any) => {
-    let pickPs = scene.pickPosition(movement.position);
+    // console.log(movement.endPosition);
+    let pickPs = scene.pickPosition(movement.endPosition);
 
-    // const sphere2 = new Mesh(geometry, material);
-    // scene.addObject(sphere2);
-    // sphere2.position.copy(pickPs);
-
-    mouse.x = (movement.position.x / scene.drawingBufferSize.width) * 2 - 1;
-    mouse.y = -(movement.position.y / scene.drawingBufferSize.height) * 2 + 1;
+    mouse.x = (movement.endPosition.x / scene.drawingBufferSize.width) * 2 - 1;
+    mouse.y = -(movement.endPosition.y / scene.drawingBufferSize.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
 
     const intersects = raycaster.intersectObjects(scene.children, true);
 
     if (Array.isArray(intersects) && intersects.length > 0) {
-        // const sphere2 = new Mesh(geometry, material);
-        // scene.addObject(sphere2);
-        // sphere2.position.copy(intersects[0].point);
-
         let r1 = new Vector3().subVectors(intersects[0].point, camera.position);
         let r2 = new Vector3().subVectors(pickPs, camera.position);
         console.log(r1.x / r2.x, r1.y / r2.y, r1.z / r2.z);
     }
-}, ScreenSpaceEventType.LEFT_CLICK);
+}, ScreenSpaceEventType.MOUSE_MOVE);
 
-const geometry2 = new PlaneGeometry(scene.drawingBufferSize.width / 200, scene.drawingBufferSize.height / 200, 32);
-const material2 = new ShaderMaterial({
-    uniforms: {
-        map: { value: scene.context.depthTexture },
-        cameraNear: { value: camera.near },
-        cameraFar: { value: camera.far }
-    },
-    vertexShader: `    #include <common>
-        #include <logdepthbuf_pars_vertex>
-    
-        varying vec2 vUv;
-        void main()
-        {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-    
-            #include <logdepthbuf_vertex>
-        }`,
-    fragmentShader: `   #include <common>
-    #include <packing>
-    #include <logdepthbuf_pars_fragment>
+const geometry3 = new BoxGeometry(1, 1, 1);
+const material3 = new MeshBasicMaterial();
+const cube = new Mesh(geometry3, material3);
+scene.addObject(cube);
 
-    varying vec2 vUv;
-    uniform sampler2D map;
-    uniform float cameraNear;
-	uniform float cameraFar;
+// let url: string = 'http://bos3d-alpha.bimwinner.com/api/bos3dalpha/files?fileKey=Z3JvdXAxLE0wMC84Qy8zNi9yQkFCQjE5eHNhR0FjVGZ0QUcyRUJRSURIdGs0MDAucG5n';
 
-    float readDepth( sampler2D depthSampler, vec2 coord ) {
-        float fragCoordZ = texture2D( depthSampler, coord ).x;
-        float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
-        return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
-    }
+// fetch(url)
+//     .then(res => {
+//         return res.blob();
+//     })
+//     .then(blob => {
+//         return createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+//     })
+//     .then(imageBitmap => {
+//         let map = new CanvasTexture(imageBitmap);
+//         map.format = RGBAFormat;
+//         // plane.material.map = map;
 
-    void main(void){
-        #include <logdepthbuf_fragment>
+//         cube.material.map = map;
+//         cube.material.needsUpdate = true;
+//         console.log('aaa');
+//     });
 
-        float depth = readDepth( map, vUv );
+// let loader = new ImageBitmapLoader();
+// loader.setOptions({ imageOrientation: 'flipY' });
 
-        gl_FragColor.rgb = 1.0 - vec3( depth );
-        gl_FragColor.a = 1.0;
-        
-    }`
+// loader.loadAsync(url).then(imageBitmap => {
+//     let map = new CanvasTexture(imageBitmap);
+//     map.format = RGBAFormat;
+//     // plane.material.map = map;
+//     cube.material.map = map;
+//     cube.material.needsUpdate = true;
+// });
+
+//!------------------------------------------------------------------------------------------
+// 这里每个CesiumTile代表一个构件
+function createCube(color: any) {
+    const geometry = new BoxGeometry(1, 1, 1);
+    const material = new MeshBasicMaterial({ color: color });
+    return new Mesh(geometry, material);
+}
+
+let tileset = new Cesium3Dtileset();
+scene.addObject(tileset);
+
+let tile = new CesiumTile(tileset, tileset.root);
+tile.comKey = 'aaa';
+tileset.addTile(tile.comKey, tile);
+
+let component1 = createCube(0xff0000);
+let component2 = createCube(0x00ff00);
+component2.position.y += 2;
+
+// tile.content.set('component1', component1);
+tile.content.set('component2', component2);
+
+//~--------------------------------
+
+let tile2 = new CesiumTile(tileset, tileset.root);
+tile2.comKey = 'bbb';
+tileset.addTile(tile2.comKey, tile2);
+
+let tile2Component = createCube(0x0000ff);
+tile2Component.position.y -= 2;
+
+tile2.content.set('tile2Component', tile2Component);
+
+console.log(tileset);
+
+scene.context.addEventListener('render', (res: any) => {
+    // console.log(res);
+
+    cube.material.map = res.res.texture;
+    cube.material.needsUpdate = true;
 });
-
-let basicMat = new MeshBasicMaterial();
-
-const plane = new Mesh(geometry2, basicMat);
-scene.addObject(plane);
-plane.position.set(0, 3, 0);
-scene.preUpdate.addEventListener(() => {
-    // plane.material.uniforms.map.value = scene.context.depthTexture;
-    plane.material.map = scene.context.depthTexture;
-});
+// tile2.visible = false;

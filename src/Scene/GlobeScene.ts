@@ -170,7 +170,7 @@ class GlobeScene extends Scene {
         this.enabledEffect = defaultValue(options.enabledEffect, false);
         this.effectComposerCollection = new EffectComposerCollection(this);
 
-        this.picking = new Picking();
+        this.picking = new Picking(this);
     }
 
     get pixelRatio(): number {

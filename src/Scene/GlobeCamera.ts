@@ -16,27 +16,18 @@ class GlobeCamera extends PerspectiveCamera {
     //渲染场景的高
     containerHeight: Number;
 
-    constructor(options?: {
-        scene: GlobeScene;
-        fov?: Number;
-        aspect?: Number;
-        near?: Number;
-        far: Number;
-    }) {
+    constructor(options?: { scene: GlobeScene; fov?: Number; aspect?: Number; near?: Number; far: Number }) {
         //视角
         let fov = defaultValue(options.fov, 60);
 
         //宽高比
-        let aspect = defaultValue(
-            options.aspect,
-            window.innerWidth / window.innerHeight
-        );
+        let aspect = defaultValue(options.aspect, window.innerWidth / window.innerHeight);
 
         //近裁剪面
         let near = defaultValue(options.near, 0.1);
 
         //远裁剪面
-        let far = defaultValue(options.far, 1000000);
+        let far = defaultValue(options.far, 1000);
         super(fov, aspect, near, far);
 
         this.scene = options.scene;

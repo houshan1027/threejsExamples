@@ -26,33 +26,42 @@ let SceneTransforms = {
         let { near, far } = scene.camera;
 
         if (scene.frameState.useLogDepth) {
-            var log2Depth: number = depth * Math.log2(far - near + 1.0);
-            var depthFromNear = Math.pow(2.0, log2Depth) - 1.0;
+            let log2Depth: number = depth * Math.log2(far - near + 1.0);
+            let depthFromNear = Math.pow(2.0, log2Depth) - 1.0;
             depth = (far * (1.0 - near / (depthFromNear + near))) / (far - near);
         }
 
-        console.log(depth);
+        // console.log(depth);
 
-        var ndc = scratchNDC.copy((Vector4 as any).UNIT_W);
+        // let ndc = scratchNDC.copy((Vector4 as any).UNIT_W);
         scene.renderer.getCurrentViewport(viewport);
-        ndc.x = ((drawingBufferPosition.x - viewport.x) / viewport.width) * 2.0 - 1.0;
-        ndc.y = ((drawingBufferPosition.y - viewport.y) / viewport.height) * 2.0 - 1.0;
-        ndc.z = depth * 2.0 - 1.0;
-        ndc.w = 1.0;
+        // ndc.x = ((drawingBufferPosition.x - viewport.width) / viewport.width) * 2.0 - 1.0;
+        // ndc.y = -((drawingBufferPosition.y - viewport.height) / viewport.height) * 2.0 + 1.0;
+        // // ndc.z = depth * 2.0 - 1.0;
+        // ndc.z = depth;
+        // ndc.w = 1.0;
 
-        camera.updateProjectionMatrix();
-        ndc.applyMatrix4(camera.projectionMatrixInverse).applyMatrix4(camera.matrixWorld);
+        // camera.updateProjectionMatrix();
+        // ndc.applyMatrix4(camera.projectionMatrixInverse).applyMatrix4(camera.matrixWorld);
 
-        scratchWorldCoords.copy(ndc);
+        // scratchWorldCoords.copy(ndc);
 
-        let worldPosition = scratchWorldCoords;
-        let w = worldPosition.w;
-        worldPosition.divideScalar(w);
+        // let worldPosition = scratchWorldCoords;
+        // let w = worldPosition.w;
+        // worldPosition.divideScalar(w);
+
+        let ndc2 = new Vector3();
+        ndc2.x = (drawingBufferPosition.x / viewport.width) * 2.0 - 1.0;
+        ndc2.y = -(drawingBufferPosition.y / viewport.height) * 2.0 + 1.0;
+        ndc2.z = depth;
+        // ndc2.z = depth;
+
+        ndc2.unproject(camera);
 
         if (!defined(result)) {
             result = new Vector3();
         }
-        result.set(worldPosition.x, worldPosition.y, worldPosition.z);
+        result.set(ndc2.x, ndc2.y, ndc2.z);
 
         return result;
     }

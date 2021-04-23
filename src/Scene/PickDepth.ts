@@ -1,6 +1,4 @@
 import { FloatType, FrontSide, LinearFilter, MeshDepthMaterial, NearestFilter, Object3D, PerspectiveCamera, RGBADepthPacking, RGBAFormat, Scene, WebGLRenderTarget } from 'three';
-import { Context } from './Context';
-import { GlobeCamera } from './GlobeCamera';
 import { GlobeScene } from './GlobeScene';
 
 class PickDepth {

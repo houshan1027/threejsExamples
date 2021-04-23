@@ -75,7 +75,7 @@ viewer.screenSpaceEventHandler.setInputAction((movement: any) => {
     if (Array.isArray(intersects) && intersects.length > 0) {
         let r1 = new Vector3().subVectors(intersects[0].point, camera.position);
         let r2 = new Vector3().subVectors(pickPs, camera.position);
-        console.log(r1.x / r2.x, r1.y / r2.y, r1.z / r2.z);
+        // console.log(r1.x / r2.x, r1.y / r2.y, r1.z / r2.z);
     }
 }, ScreenSpaceEventType.MOUSE_MOVE);
 

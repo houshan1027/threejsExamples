@@ -23,8 +23,8 @@ import { Resource } from './Core/Resource';
 import { ScreenSpaceEventType } from './Core/ScreenSpaceEventType';
 import { GlobeScene } from './Scene/GlobeScene';
 import { Model } from './Scene/Model';
-import { Cesium3Dtileset } from './Tmp/Cesium3Dtileset';
-import { CesiumTile } from './Tmp/CesiumTile';
+// import { Cesium3Dtileset } from './Tmp/Cesium3Dtileset';
+// import { CesiumTile } from './Tmp/CesiumTile';
 import { Viewer } from './Viewer/Viewer';
 
 let viewer = new Viewer('app', {
@@ -116,43 +116,43 @@ scene.addObject(cube);
 
 //!------------------------------------------------------------------------------------------
 // 这里每个CesiumTile代表一个构件
-function createCube(color: any) {
-    const geometry = new BoxGeometry(1, 1, 1);
-    const material = new MeshBasicMaterial({ color: color });
-    return new Mesh(geometry, material);
-}
+// function createCube(color: any) {
+//     const geometry = new BoxGeometry(1, 1, 1);
+//     const material = new MeshBasicMaterial({ color: color });
+//     return new Mesh(geometry, material);
+// }
 
-let tileset = new Cesium3Dtileset();
-scene.addObject(tileset);
+// let tileset = new Cesium3Dtileset();
+// scene.addObject(tileset);
 
-let tile = new CesiumTile(tileset, tileset.root);
-tile.comKey = 'aaa';
-tileset.addTile(tile.comKey, tile);
+// let tile = new CesiumTile(tileset, tileset.root);
+// tile.comKey = 'aaa';
+// tileset.addTile(tile.comKey, tile);
 
-let component1 = createCube(0xff0000);
-let component2 = createCube(0x00ff00);
-component2.position.y += 2;
+// let component1 = createCube(0xff0000);
+// let component2 = createCube(0x00ff00);
+// component2.position.y += 2;
 
 // tile.content.set('component1', component1);
-tile.content.set('component2', component2);
+// tile.content.set('component2', component2);
 
 //~--------------------------------
 
-let tile2 = new CesiumTile(tileset, tileset.root);
-tile2.comKey = 'bbb';
-tileset.addTile(tile2.comKey, tile2);
+// let tile2 = new CesiumTile(tileset, tileset.root);
+// tile2.comKey = 'bbb';
+// tileset.addTile(tile2.comKey, tile2);
 
-let tile2Component = createCube(0x0000ff);
-tile2Component.position.y -= 2;
+// let tile2Component = createCube(0x0000ff);
+// tile2Component.position.y -= 2;
 
-tile2.content.set('tile2Component', tile2Component);
+// tile2.content.set('tile2Component', tile2Component);
 
-console.log(tileset);
+// console.log(tileset);
 
-scene.context.addEventListener('render', (res: any) => {
-    // console.log(res);
+// scene.context.addEventListener('render', (res: any) => {
+//     // console.log(res);
 
-    cube.material.map = res.res.texture;
-    cube.material.needsUpdate = true;
-});
+//     cube.material.map = res.res.texture;
+//     cube.material.needsUpdate = true;
+// });
 // tile2.visible = false;

@@ -97,6 +97,8 @@ class Context extends EventDispatcher {
 
         let x = Math.max(defaultValue(readState.x, 0), 0);
         let y = Math.max(defaultValue(readState.y, 0), 0);
+        let width = defaultValue(readState.width, bufferSize.width);
+        let height = defaultValue(readState.height, bufferSize.height);
 
         //要被读取颜色的RTTexture
         let renderTarget = readState.renderTarget;
@@ -119,19 +121,8 @@ class Context extends EventDispatcher {
         renderer.autoClear = false;
         renderer.setClearColor(0x000000, 1);
 
-        // renderer.setRenderTarget(readState.renderTarget);
-        // renderer.clear();
-        // renderer.render(scene, camera);
-
-        // // camera.clearViewOffset();
-
-        // //renderer配置还原
-
-        // renderer.xr.enabled = currentXrEnabled;
-        // renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
-        // renderer.setRenderTarget(currentRenderTarget);
-
         renderer.clear();
+        renderTarget.setSize(width, height);
         renderer.setRenderTarget(renderTarget);
         renderer.clear();
         renderer.render(scene, camera);

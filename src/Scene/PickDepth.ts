@@ -52,8 +52,8 @@ class PickDepth {
         let pixels = context.readPixels({
             x: x,
             y: bufferSize.height - y,
-            width: 1,
-            height: 1,
+            width: bufferSize.width,
+            height: bufferSize.height,
             renderTarget: this.renderTarget,
             scene: pickScene,
             camera: this.pickCamera

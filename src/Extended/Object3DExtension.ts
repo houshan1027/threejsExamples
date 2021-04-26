@@ -24,9 +24,7 @@ declare module 'three/src/core/Object3D' {
 Object3D.prototype.allowPicking = true;
 
 //每帧更新函数
-Object3D.prototype.updateFixedFrame = function(
-    frameState: FrameStateInterFace
-) {
+Object3D.prototype.updateFixedFrame = function(frameState: FrameStateInterFace) {
     let children = this.children;
 
     for (let i = 0, len = children.length; i < len; i++) {
@@ -47,10 +45,7 @@ Object3D.prototype.addObject = function(object: Object3D) {
     return object;
 };
 
-Object3D.prototype.removeObject = function(
-    object: Object3DCollection | Object3D,
-    isDestroy = false
-) {
+Object3D.prototype.removeObject = function(object: Object3DCollection | Object3D, isDestroy = false) {
     this.remove(object);
 
     if (this.destroyChildren || isDestroy) {
